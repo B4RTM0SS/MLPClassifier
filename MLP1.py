@@ -79,7 +79,7 @@ class MLPClassifier():
         self.activation = activation
         self.loss_fn = Loss('x_entropy')
         self.eta = eta
-        self.n_class = 0
+        self.n_class = None
         
     def initialize_net(self, input_dim, output_dim):
         """
@@ -106,6 +106,20 @@ class MLPClassifier():
         
     @staticmethod
     def count_unique(lst):
+        """
+        
+
+        Parameters
+        ----------
+        lst : list of elements
+            list of elements.
+
+        Returns
+        -------
+        int
+            number of unique elements in lst.
+
+        """
         elems = []
         for e in lst:
             if e not in elems:
@@ -245,7 +259,10 @@ class Layer():
         n_units : int >0
             number of neurons of the layer.
         activation : str, optional
-            indicates activation function of the layer. The default is 'linear'
+            indicates activation function of the layer. The default is 
+            'linear'.
+        out : bool, optional
+            DESCRIPTION. The default is False.
 
         Returns
         -------
@@ -447,7 +464,7 @@ class Gradient():
         
 # %%
 # 86
-mlp = MLPClassifier(hidden_layers=(128, 64, 32, 16), eta=0.05)
+mlp = MLPClassifier(hidden_layers=(128, 64, 32), eta=0.07)
 mlp.fit(X_train, y_train, 2000)
 accuracy = mlp.score(X_test, y_test)
 print(f"accuracy : {accuracy * 100}%")
