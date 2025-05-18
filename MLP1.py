@@ -53,7 +53,8 @@ X_test = scaler.transform(X_test)
 # %% MLP Classifier class
 class MLPClassifier():
         
-    def __init__(self, hidden_layers=(100,), activation='relu', eta=0.001):
+    def __init__(self, hidden_layers=(100,), activation='relu', eta=0.001, \
+                 batch_size='auto'):
         """
         Constructs a multi-layer perceptron classifier object.
 
@@ -77,11 +78,12 @@ class MLPClassifier():
         self.hidden_layers = hidden_layers
         self.activation = activation
         self.eta = eta
+        self.batch_size = batch_size
         
         self.layers = []
         self.loss_fn = Loss('x_entropy')
         
-    def initialize_net(self, input_dim, output_dim):
+    def initialize_net(self, sample_dim, input_dim, output_dim):
         """
         Initialize the hidden layers and output layer of the net.
 
@@ -98,11 +100,14 @@ class MLPClassifier():
 
         """
         self.layers.clear()
-        self.n_class = output_dim
+        
         for i in self.hidden_layers:
             self.add(input_dim, i, self.activation)
             input_dim = i
         self.add(input_dim, output_dim, out=True)
+        
+        if self.batch_size == 'auto':
+            self.batch_size = min(200, sample_dim)
         
     @staticmethod
     def count_unique(lst):
@@ -208,16 +213,18 @@ class MLPClassifier():
         None.
 
         """
-        n_features, n_classes = X.shape[1], MLPClassifier.count_unique(y)
-        self.initialize_net(n_features, n_classes)
+        (n_samples, n_features), n_classes = X.shape, MLPClassifier.count_unique(y)
+        self.initialize_net(n_samples, n_features, n_classes)
         
         y_one_hot = np.eye(n_classes)[y]
         
         for i in range(epochs):
-            self.predict_proba(X)
-            for l in self.layers[::-1]:
-                l.backward(l.input, y_one_hot, self.eta)
-            Layer.prev_weights = None
+            batches = self.init_batches(X, y, y_one_hot)            
+            for batch in batches:
+                self.predict_proba(batch[0])
+                for l in self.layers[::-1]:
+                    l.backward(l.input, batch[1], self.eta)
+                Layer.prev_weights = None
     
     def score(self, X, y):
         """
@@ -243,6 +250,13 @@ class MLPClassifier():
         accuracy = np.mean(pred == y)
         return accuracy
     
+    def init_batches(self, X, y, y_one_hot):
+        indexes = np.random.choice(X.shape[0], X.shape[0], replace=False)
+        X, y_one_hot, y = X[indexes], y_one_hot[indexes], y[indexes]
+        batches = [(X[i:i+self.batch_size], y_one_hot[i:i+self.batch_size]) \
+                   for i in range(0, X.shape[0], self.batch_size)]
+        return batches
+        
 # %%
 
 # %% Layer class
@@ -467,8 +481,38 @@ class Gradient():
         
 # %%
 
+# %% tic and toc classes
+import time
+
+class tic():
+    
+    def __init__(self):
+        toc._start = time.perf_counter()
+    
+class toc():
+    
+    _start = None
+    __delta = None
+    __init = False
+    
+    def __init__(self):
+        toc.__delta = time.perf_counter() - toc._start
+        toc.__init = True
+        print(self)
+        
+    def __str__(self):
+        if toc.__init:
+            toc.__init = False 
+            return str(toc.__delta)
+        return ''
+# %%
+
+tic()
 mlp = MLPClassifier(hidden_layers=(128, 256, 512), eta=0.04)
-mlp.fit(X_train, y_train, 2000)
+toc()
+tic()
+mlp.fit(X_train, y_train, 3000)
+toc()
 accuracy = mlp.score(X_test, y_test)
 print(f"accuracy : {accuracy * 100}%")
 print(f'accuracy on train set : {mlp.score(X_train, y_train) * 100}%')
