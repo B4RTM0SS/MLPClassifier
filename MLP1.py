@@ -75,11 +75,11 @@ class MLPClassifier():
 
         """
         self.hidden_layers = hidden_layers
-        self.layers = []
         self.activation = activation
-        self.loss_fn = Loss('x_entropy')
         self.eta = eta
-        self.n_class = None
+        
+        self.layers = []
+        self.loss_fn = Loss('x_entropy')
         
     def initialize_net(self, input_dim, output_dim):
         """
@@ -107,7 +107,7 @@ class MLPClassifier():
     @staticmethod
     def count_unique(lst):
         """
-        
+        Count the number of unique element in the input list.
 
         Parameters
         ----------
@@ -208,8 +208,11 @@ class MLPClassifier():
         None.
 
         """
-        self.initialize_net(X.shape[1], MLPClassifier.count_unique(y))
-        y_one_hot = np.eye(self.n_class)[y]
+        n_features, n_classes = X.shape[1], MLPClassifier.count_unique(y)
+        self.initialize_net(n_features, n_classes)
+        
+        y_one_hot = np.eye(n_classes)[y]
+        
         for i in range(epochs):
             self.predict_proba(X)
             for l in self.layers[::-1]:
@@ -464,7 +467,7 @@ class Gradient():
         
 # %%
 
-mlp = MLPClassifier(hidden_layers=(128, 64, 32, 16), eta=0.07)
+mlp = MLPClassifier(hidden_layers=(128, 256, 512), eta=0.04)
 mlp.fit(X_train, y_train, 2000)
 accuracy = mlp.score(X_test, y_test)
 print(f"accuracy : {accuracy * 100}%")
