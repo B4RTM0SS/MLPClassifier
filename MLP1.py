@@ -463,8 +463,8 @@ class Gradient():
         return nabla_w, nabla_b
         
 # %%
-# 86
-mlp = MLPClassifier(hidden_layers=(128, 64, 32), eta=0.07)
+
+mlp = MLPClassifier(hidden_layers=(128, 64, 32, 16), eta=0.07)
 mlp.fit(X_train, y_train, 2000)
 accuracy = mlp.score(X_test, y_test)
 print(f"accuracy : {accuracy * 100}%")
